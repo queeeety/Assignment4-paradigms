@@ -2,6 +2,7 @@
 #include <fstream>
 #include <iostream>
 #include <dlfcn.h>
+#include <string>
 
 using namespace std;
 
@@ -550,28 +551,67 @@ class EncryptConnector{
 public:
 
     void* handle; // to store the handle
+    int (*encrypt)(char*,int,char*);
+    int (*decrypt)(char*,int,char*);
 
     EncryptConnector(){
         // Load the dynamic library
-        handle = dlopen("/Users/tim_bzz/Documents/projects/Clion/Paradigms/Assignment3/libcaesar.so", RTLD_LAZY);
+        handle = dlopen("/Users/tim_bzz/Documents/projects/Clion/Paradigms/Assignment4/libcaesar.so", RTLD_LAZY);
         if (!handle) {
-            fprintf(stderr, "Error: %s\n", dlerror());
+            fprintf(stderr, "Error loading library: %s\n", dlerror());
+            exit(EXIT_FAILURE);
         }
 
-        // Load the function from the library
-        int (*encrypt)(char*,int,char*);
+        // Load the encrypt function from the library
         *(void**)(&encrypt) = dlsym(handle, "encrypt");
-        if (!encrypt) {
-            fprintf(stderr, "Error: %s\n", dlerror());
+        char* error = dlerror();
+        if (error != NULL) {
+            fprintf(stderr, "Error loading 'encrypt' function: %s\n", error);
+            exit(EXIT_FAILURE);
         }
 
-        int (*decrypt)(char*,int,char*);
+        // Load the decrypt function from the library
         *(void**)(&decrypt) = dlsym(handle, "decrypt");
-        if (!decrypt) {
-            fprintf(stderr, "Error: %s\n", dlerror());
+        error = dlerror();
+        if (error != NULL) {
+            fprintf(stderr, "Error loading 'decrypt' function: %s\n", error);
+            exit(EXIT_FAILURE);
         }
     }
 
+    int keyChecker(){
+        int key;
+        bool isRunning = true;
+        do {
+            cout << "Please, enter the key: ";
+            cin >> key;
+            cin.ignore();
+            if (key >= 0) {
+                isRunning = false;
+            } else {
+                cout << "I can not encrypt with negative key. Try again " << endl;
+            }
+        } while (isRunning);
+        return key;
+    }
+
+    void EncryptMessage (char message[]){
+        int key = keyChecker();
+        // Allocate more memory for the encrypted message if necessary
+        char* encryptedMessage = new char[strlen(message) * 2]; // Change this according to your needs
+        encrypt(message, key, encryptedMessage);
+        cout << "Encrypted text: " << encryptedMessage << endl;
+        delete[] encryptedMessage;
+    }
+
+    void DecryptMessage (char message[]){
+        int key = keyChecker();
+        // Allocate more memory for the decrypted message if necessary
+        char* decryptedMessage = new char[strlen(message) * 2]; // Change this according to your needs
+        decrypt(message, key, decryptedMessage);
+        cout << "Decrypted text: " << decryptedMessage << endl;
+        delete[] decryptedMessage;
+    }
     ~EncryptConnector(){ // Add this destructor
         dlclose(handle);
     }
@@ -739,6 +779,9 @@ public:
 
 
 int main() {
-    UI ui;
+    EncryptConnector a;
+    a.EncryptMessage("Hello, world!");
+    a.DecryptMessage("Jgnnq, yqtnf!");
+
     return 0;
 }
