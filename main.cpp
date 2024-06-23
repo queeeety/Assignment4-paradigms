@@ -19,7 +19,10 @@ char copyBuffer [MAX_STRING_SIZE];
 int currentLine =  1;
 int currentIndex = 1;
 
-
+class textEditor;
+class textNode;
+class Coursor;
+class EncryptConnector;
 
 class textNode {
 public:
@@ -476,18 +479,105 @@ public:
 
 };
 
+class Coursor{
+public:
+    int currentLine =  1;
+    int currentIndex = 1;
+    int maxLines;
+    textNode* text;
+
+    void Update(int max, textNode* newText){
+        text = newText;
+        maxLines = max;
+    }
+
+    void pointVerticalMove(int direction){
+        currentLine = (currentLine + direction) > maxLines ? maxLines :
+                      (currentLine + direction) <= 1 ? 1 : currentLine + direction;
+        textNode* temp = text;
+        for (int i = 1; i < currentLine; i++)
+            temp = temp->next;
+        if (currentIndex > strlen(temp->data)) {
+            currentIndex = strlen(temp->data) > 0 ? strlen(temp->data)+1 : 1;
+        }
+        pointVisualisator();
+    }
+
+    void pointHorizontalMove(int direction) {
+        textNode *temp = text;
+        temp = temp->next;
+        for (int i = 1; i < currentLine; i++)
+            temp = temp->next;
+
+        if (currentIndex + direction > strlen(temp->data) + 1){
+            currentIndex = 1;
+            if (currentLine < maxLines){
+                currentLine++;
+            }
+        } else if (currentIndex + direction < 1){
+            if (currentLine > 1){
+                currentLine--;
+                textNode *temp = text;
+                temp = temp->next;
+                for (int i = 1; i < currentLine-1; i++)
+                    temp = temp->next;
+                currentIndex = strlen(temp->data) + 1;
+            }
+            else if (currentLine == 1){
+                currentIndex = 1;
+            }
+        } else {
+            currentIndex += direction;
+        }
+        pointVisualisator();
+    }
+
+    void pointVisualisator(){
+        textNode *temp = text;
+        temp = temp->next;
+        for (int i = 1; i < currentLine-1; i++)
+            temp = temp->next;
+
+        if (currentLine != 1){
+            cout << currentLine-1 << ". " << temp->data << endl;
+            temp = temp->next;
+        }
+
+        cout << currentLine << ". ";
+
+        for (int i = 1; i <= strlen(temp->data); i++) {
+            if (i == currentIndex) {
+                cout << "|";
+            }
+            cout << temp->data[i - 1];
+        }
+        if (currentIndex >= strlen(temp->data) + 1) {
+            cout << "|";
+        }
+        cout << endl;
+
+        if (currentLine != maxLines){
+            temp = temp->next;
+            cout << currentLine+1 << ". " << temp->data << endl;
+        }
+    }
+};
+
 
 class textEditor {
 public:
     textNode head;
     string path = "./../textStart.txt";
+    Coursor coursor;
 
     textEditor() : head("") {
         this->read();
+        int lines = this->CountLines();
+        coursor.Update(lines, &head);
     }
 
     int CountLines(){
-        int lineCounter = -1;
+        int lineCounter = 0;
         textNode* temp = &head;
         do
         {
@@ -531,90 +621,15 @@ public:
             cout << temp->data << endl;
             temp = temp->next;
         }
-
     }
+
+    textNode* getHead(){
+        return &head;
+    }
+
+
 };
 
-class Coursor{
-public:
-    int currentLine =  1;
-    int currentIndex = 1;
-
-
-
-    void pointVerticalMove(int direction, int maxLines, textNode* text){
-
-        currentLine = (currentLine + direction) >= maxLines ? maxLines :
-                      (currentLine + direction) <= 1 ? 1 : currentLine + direction;
-        textNode *temp = text;
-        for (int i = 1; i < currentLine; i++)
-            temp = temp->next;
-        if (currentIndex > strlen(temp->data)) {
-            currentIndex = strlen(temp->data) > 0 ? strlen(temp->data) : 1;
-        }
-
-        pointVisualisator(text, maxLines);
-    }
-
-    void pointHorizontalMove(int direction, int maxLines, textNode* text) {
-        textNode *temp = text;
-        temp = temp->next;
-        for (int i = 1; i < currentLine; i++)
-            temp = temp->next;
-
-        if (currentIndex + direction > strlen(temp->data) + 1){
-            currentIndex = 1;
-            if (currentLine < maxLines){
-                currentLine++;
-            }
-        } else if (currentIndex + direction < 1){
-            if (currentLine > 1){
-                currentLine--;
-                textNode *temp = text;
-                temp = temp->next;
-                for (int i = 1; i < currentLine-1; i++)
-                    temp = temp->next;
-                currentIndex = strlen(temp->data) + 1;
-            }
-            else if (currentLine == 1){
-                currentIndex = 1;
-            }
-        } else {
-            currentIndex += direction;
-        }
-        pointVisualisator(text, maxLines);
-    }
-
-    void pointVisualisator(textNode* text, int maxLines){
-        textNode *temp = text;
-        temp = temp->next;
-        for (int i = 1; i < currentLine-1; i++)
-            temp = temp->next;
-
-        if (currentLine != 1){
-            cout << currentLine-1 << ". " << temp->data << endl;
-            temp = temp->next;
-        }
-
-        cout << currentLine << ". ";
-
-        for (int i = 1; i <= strlen(temp->data); i++) {
-            if (i == currentIndex) {
-                cout << "|";
-            }
-            cout << temp->data[i - 1];
-        }
-        if (currentIndex >= strlen(temp->data) + 1) {
-            cout << "|";
-        }
-        cout << endl;
-
-        if (currentLine != maxLines){
-            temp = temp->next;
-            cout << currentLine+1 << ". " << temp->data << endl;
-        }
-    }
-};
 
 class UndoRedoManager {
 public:
@@ -768,58 +783,58 @@ public:
     }
 };
 
-/*
+
 class UI{
 public:
     UI(){
         cout << "Welcome to the text encryptor\n";
-        textNode head("");
+        textEditor head;
         head.read();
         bool isRunning = true;
         printMenu();
         while (isRunning) {
             char answer = getCommand();
             switch (answer) {
-                case 'l':
-                    head.lineChecker();
-                    break;
+//                case 'l':
+//                    head.lineChecker();
+//                    break;
 
                 case 'p':
                     head.print();
                     break;
 
-                case '0':
-                    head.lineAppend();
-                    break;
+//                case '0':
+//                    head.lineAppend();
+//                    break;
 
-                case '1':
-                    head.AddNewLine();
-                    break;
+//                case '1':
+//                    head.AddNewLine();
+//                    break;
 
                 case '2':
                     head.insert("\n");
                     cout << "New line was started\n";
                     break;
 
-                case '3':
-                    head.deleter();
-                    break;
+//                case '3':
+//                    head.deleter();
+//                    break;
 
                 case '4':
                     head.read();
                     break;
 
-                case '5':
-                    head.insertWithReplacement();
-                    break;
+//                case '5':
+//                    head.insertWithReplacement();
+//                    break;
 
-                case '6':
-                    head.textAddIntoLineByIndex();
-                    break;
+//                case '6':
+//                    head.textAddIntoLineByIndex();
+//                    break;
 
-                case '7':
-                    head.searcher();
-                    break;
+//                case '7':
+//                    head.searcher();
+//                    break;
 
                 case '8':
                     system("clear");
@@ -829,44 +844,44 @@ public:
                     printMenu();
                     break;
 
-                case 'u':
-                    head.Undo();
-                    break;
+//                case 'u':
+//                    head.Undo();
+//                    break;
 
-                case 'r':
-                    head.Redo();
-                    break;
+//                case 'r':
+//                    head.Redo();
+//                    break;
 
-                case 'c':
-                    head.Copy();
-                    break;
+//                case 'c':
+//                    head.Copy();
+//                    break;
 
-                case 'v':
-                    head.Paste();
-                    break;
+//                case 'v':
+//                    head.Paste();
+//                    break;
 
-                case 'x':
-                    CleanConsole();
-                    head.Cut();
-                    break;
+//                case 'x':
+//                    CleanConsole();
+//                    head.Cut();
+//                    break;
 
                 case 'w':
                     CleanConsole();
-                    head.pointVerticalMove(-1);
+                    head.coursor.pointVerticalMove(-1);
                     break;
 
                 case 's':
                     CleanConsole();
-                    head.pointVerticalMove(1);
+                    head.coursor.pointVerticalMove(1);
                     break;
 
                 case 'a':
                     CleanConsole();
-                    head.pointHorizontalMove(-1);
+                    head.coursor.pointHorizontalMove(-1);
                     break;
 
                 case 'd':
-                    head.pointHorizontalMove(1);
+                    head.coursor.pointHorizontalMove(1);
                     break;
 
                 case 'q':
@@ -928,11 +943,10 @@ public:
 
 
 };
-*/
 
 int main() {
-    textEditor a;
-    a.CountLines();
-    a.print();
+    UI ui;
+
     return 0;
+
 }
