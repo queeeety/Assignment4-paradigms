@@ -547,6 +547,98 @@ public:
     }
 };
 
+
+class textEditor {
+public:
+    textNode head;
+    textEditor() : head("") {
+        head.read();
+    }
+
+};
+
+class UndoRedoManager {
+public:
+
+
+    void CheckStack(char WhatStack){
+        if (WhatStack == 'u'){
+            if (undoStack.size() >= 3){
+                delete[] undoStack.front().data;
+                undoStack.pop_front();
+            }
+        }
+        else if (WhatStack == 'r'){
+            if (redoStack.size() >= 3){
+                delete[] redoStack.front().data;
+                redoStack.pop_front();
+            }
+        }
+    }
+
+    void StackFulfill(char* input_str, long line_number){
+        MyStringHAHAIDIDIT input{};
+        input.data = new char[strlen(input_str) + 1];
+        strcpy(input.data, input_str);
+        input.lineNumber = line_number;
+        // If the undo stack already contains 3 elements, pop the oldest one
+        CheckStack('u');
+        undoStack.push_front(input);
+    }
+
+    void Undo(textNode* node){
+        if (undoStack.empty()){
+            cout << "Nothing to undo" << endl;
+            return;
+        }
+        MyStringHAHAIDIDIT temp = undoStack.back();
+        undoStack.pop_back();
+
+        textNode* temporaryNode = node;
+        for (int i = 1; i <= temp.lineNumber; i++)
+            temporaryNode = temporaryNode->next;
+
+        MyStringHAHAIDIDIT tempNode;
+        tempNode.data = new char[strlen(temporaryNode->data) + 1]; // allocate memory with new[]
+        strcpy(tempNode.data, temporaryNode->data); // copy the data
+        tempNode.lineNumber = temp.lineNumber;
+        CheckStack('r');
+        redoStack.push_front(tempNode);
+
+        delete[] temporaryNode->data; // delete old memory
+        temporaryNode->data = new char[strlen(temp.data) + 1]; // allocate new memory
+        strcpy(temporaryNode->data, temp.data); // copy the data
+
+        cout << "Undo: the " << temp.lineNumber << " line go back to " << temp.data << endl;
+    }
+
+    void Redo(textNode* node){
+        if (redoStack.empty()){
+            cout << "Nothing to redo" << endl;
+            return;
+        }
+        MyStringHAHAIDIDIT temporary = redoStack.front();
+        redoStack.pop_front();
+
+        textNode* temporaryNode = node;
+        for (int i = 1; i <= temporary.lineNumber; i++)
+            temporaryNode = temporaryNode->next;
+
+        MyStringHAHAIDIDIT oldNode;
+        oldNode.data = new char[strlen(temporaryNode->data) + 1]; // allocate memory with new[]
+        strcpy(oldNode.data, temporaryNode->data); // copy the data
+        oldNode.lineNumber = temporary.lineNumber;
+        CheckStack('u');
+        undoStack.push_front(oldNode);
+
+        delete[] temporaryNode->data; // delete old memory
+        temporaryNode->data = new char[strlen(temporary.data) + 1]; // allocate new memory
+        strcpy(temporaryNode->data, temporary.data); // copy the data
+
+        cout << "Redo: the " << temporary.lineNumber << " line went back to " << temporary.data << endl;
+    }
+};
+
 class EncryptConnector{
 public:
 
@@ -620,7 +712,7 @@ public:
 class UI{
 public:
     UI(){
-        cout << "Welcome to the text editor\n";
+        cout << "Welcome to the text encryptor\n";
         textNode head("");
         head.read();
         bool isRunning = true;
