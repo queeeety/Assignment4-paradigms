@@ -473,35 +473,104 @@ public:
         cout << "Your line is now: " << newLine << endl;
 
     }
-    void pointVerticalMove(int direction){
-        int maxLines = CountLines();
+
+};
+
+
+class textEditor {
+public:
+    textNode head;
+    string path = "./../textStart.txt";
+
+    textEditor() : head("") {
+        this->read();
+    }
+
+    int CountLines(){
+        int lineCounter = -1;
+        textNode* temp = &head;
+        do
+        {
+            lineCounter++;
+            temp = temp->next;
+        } while (temp != nullptr);
+        cout << "Lines: " << lineCounter << endl;
+        return lineCounter;
+    }
+
+    void read() {
+        ifstream file(path);
+        char str[MAX_STRING_SIZE];
+        if (file.is_open()) {
+            while (file.getline(str, MAX_STRING_SIZE)) {
+                this->insert(str);
+            }
+            file.close();
+        } else {
+            cout << "Unable to open file";
+        }
+    }
+
+    void insert(const char* input) {
+        textNode *new_node = new textNode(input);
+
+        if (head.next == nullptr) {
+            head.next = new_node;
+        } else {
+            textNode *temp = head.next;
+            while (temp->next != nullptr) {
+                temp = temp->next;
+            }
+            temp->next = new_node;
+        }
+    }
+
+    void print(){
+        textNode *temp = head.next;
+        while (temp != nullptr) {
+            cout << temp->data << endl;
+            temp = temp->next;
+        }
+
+    }
+};
+
+class Coursor{
+public:
+    int currentLine =  1;
+    int currentIndex = 1;
+
+
+
+    void pointVerticalMove(int direction, int maxLines, textNode* text){
+
         currentLine = (currentLine + direction) >= maxLines ? maxLines :
                       (currentLine + direction) <= 1 ? 1 : currentLine + direction;
-        textNode *temp = this;
+        textNode *temp = text;
         for (int i = 1; i < currentLine; i++)
             temp = temp->next;
         if (currentIndex > strlen(temp->data)) {
             currentIndex = strlen(temp->data) > 0 ? strlen(temp->data) : 1;
         }
 
-        pointVisualisator();
+        pointVisualisator(text, maxLines);
     }
 
-    void pointHorizontalMove(int direction) {
-        textNode *temp = this;
+    void pointHorizontalMove(int direction, int maxLines, textNode* text) {
+        textNode *temp = text;
         temp = temp->next;
         for (int i = 1; i < currentLine; i++)
             temp = temp->next;
 
         if (currentIndex + direction > strlen(temp->data) + 1){
             currentIndex = 1;
-            if (currentLine < CountLines()){
+            if (currentLine < maxLines){
                 currentLine++;
             }
         } else if (currentIndex + direction < 1){
             if (currentLine > 1){
                 currentLine--;
-                textNode *temp = this;
+                textNode *temp = text;
                 temp = temp->next;
                 for (int i = 1; i < currentLine-1; i++)
                     temp = temp->next;
@@ -513,11 +582,11 @@ public:
         } else {
             currentIndex += direction;
         }
-        pointVisualisator();
+        pointVisualisator(text, maxLines);
     }
 
-    void pointVisualisator(){
-        textNode *temp = this;
+    void pointVisualisator(textNode* text, int maxLines){
+        textNode *temp = text;
         temp = temp->next;
         for (int i = 1; i < currentLine-1; i++)
             temp = temp->next;
@@ -540,21 +609,11 @@ public:
         }
         cout << endl;
 
-        if (currentLine != CountLines()){
+        if (currentLine != maxLines){
             temp = temp->next;
             cout << currentLine+1 << ". " << temp->data << endl;
         }
     }
-};
-
-
-class textEditor {
-public:
-    textNode head;
-    textEditor() : head("") {
-        head.read();
-    }
-
 };
 
 class UndoRedoManager {
@@ -709,6 +768,7 @@ public:
     }
 };
 
+/*
 class UI{
 public:
     UI(){
@@ -868,12 +928,11 @@ public:
 
 
 };
-
+*/
 
 int main() {
-    EncryptConnector a;
-    a.EncryptMessage("Hello, world!");
-    a.DecryptMessage("Jgnnq, yqtnf!");
-
+    textEditor a;
+    a.CountLines();
+    a.print();
     return 0;
 }
