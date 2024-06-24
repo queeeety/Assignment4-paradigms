@@ -211,6 +211,7 @@ public:
         } else {
             cout << "Unable to open file";
         }
+
     }
 
     void insert(const char *input) {
@@ -497,8 +498,10 @@ public:
 
                 case 'r':
                     head.PathChecker();
+                    head.textEditorPreset(head.path);
+                    head.print();
                     break;
-                    
+
 
 
                 case 'w':
