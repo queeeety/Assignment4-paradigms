@@ -22,6 +22,7 @@ int currentIndex = 1;
 class textEditor;
 class textNode;
 class Coursor;
+class EncryptConnector;
 
 class textNode {
 public:
@@ -446,6 +447,10 @@ public:
         }
     }
 
+    void SetKey(){
+        key = keyChecker();
+    }
+
     void EncryptString (char message[], char* encryptedMessage){
         KeyCheck();
         // Allocate more memory for the encrypted message if necessary
@@ -484,7 +489,10 @@ class UI{
 public:
     UI(){
         cout << "Welcome to the text encryptor\n";
+
         textEditor head;
+        EncryptConnector encryptor;
+
         head.textEditorPreset("./../textStart.txt");
         bool isRunning = true;
         printMenu();
@@ -502,7 +510,9 @@ public:
                     head.print();
                     break;
 
-
+                case 'k':
+                    encryptor.SetKey();
+                    break;
 
                 case 'w':
                     CleanConsole();
