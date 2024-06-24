@@ -21,6 +21,7 @@ extern "C"{
     void encrypt(char* text, int key, char* encr){
         key = key % ALPHABET_SIZE;
         for (int i = 0; text[i] != '\0'; i++) {
+            bool is_number = text[i] >= '0' && text[i] <= '9';
             bool is_upper = text[i] >= ASCII_A && text[i] <= ASCII_Z;
             bool is_lower = text[i] >= ASCII_a && text[i] <= ASCII_a + ALPHABET_SIZE;
             if (is_upper){
@@ -28,6 +29,9 @@ extern "C"{
             }
             else if (is_lower){
                 encr[i] = ((text[i] + key - ASCII_a) % ALPHABET_SIZE) + ASCII_a;
+            }
+            else if (is_number){
+                encr[i] = ((text[i] + key - '0') % 10) + '0';
             }
             else if (is_skip_symbol(text[i])){
                 encr[i] = text[i];
@@ -42,6 +46,7 @@ extern "C"{
     void decrypt(char* text, int key, char* encr){
         key = key % ALPHABET_SIZE;
         for (int i = 0; text[i] != '\0'; i++) {
+            bool is_number = text[i] >= '0' && text[i] <= '9';
             bool is_upper = text[i] >= ASCII_A && text[i] <= ASCII_Z;
             bool is_lower = text[i] >= ASCII_a && text[i] <= ASCII_a + ALPHABET_SIZE;
             if (is_upper){
@@ -49,6 +54,9 @@ extern "C"{
             }
             else if (is_lower){
                 encr[i] = ((text[i] - key - ASCII_a + ALPHABET_SIZE) % ALPHABET_SIZE) + ASCII_a;
+            }
+            else if (is_number){
+                encr[i] = ((text[i] - key - '0' + 10) % 10) + '0';
             }
             else if (is_skip_symbol(text[i])){
                 encr[i] = text[i];
