@@ -73,7 +73,7 @@ extern "C"{
                 cout << "I can not encrypt with negative key. Try again " << endl;
             }
         } while (isRunning);
-        cout << "The key is set!";
+        cout << "The key is set!\n";
         return key;
     }
 

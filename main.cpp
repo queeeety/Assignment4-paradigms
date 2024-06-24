@@ -13,11 +13,6 @@ struct MyStringHAHAIDIDIT {
     long lineNumber;
 };
 
-deque<MyStringHAHAIDIDIT> undoStack;
-deque<MyStringHAHAIDIDIT> redoStack;
-char copyBuffer [MAX_STRING_SIZE];
-int currentLine =  1;
-int currentIndex = 1;
 
 class textEditor;
 class textNode;
@@ -293,23 +288,41 @@ public:
         string tempPath;
         CheckPoint:
             cout << "Please, enter the path to the file: ";
-            cin >> path;
+            cin >> tempPath;
             cin.ignore();
 
             if ('/' != tempPath[0] || '.' != tempPath[0]){
-                tempPath = "./../" + path;
+                tempPath = "./../" + tempPath;
             }
+                ifstream file(tempPath);
+                if (!file.is_open()) {
+                    cout << "File not found\n";
+                    goto CheckPoint;
+                } else {
+                    path = tempPath;
+                    cout << "Path changed\n";
+                }
 
-            ifstream file(tempPath);
-            if (!file.is_open()) {
-                cout << "File not found\n";
-                goto CheckPoint;
-            }
-            else{
-                path = tempPath;
-                cout << "Path changed\n";
-            }
     }
+
+    char* GetLine(){
+        textNode* temp = &head;
+        for (int i = 0; i < coursor.currentLine; i++){
+            temp = temp->next;
+        }
+        return temp->data;
+    }
+
+    ~textEditor() {
+        textNode *temp = head.next;
+        while (temp != nullptr) {
+            textNode *next = temp->next;
+            delete[] temp->data;
+            delete temp;
+            temp = next;
+        }
+    }
+
 };
 
 /*
@@ -442,29 +455,67 @@ public:
         if (key == -1){
             key = keyChecker();
         }
-        else {
-            key = keyChecker();
-        }
     }
 
     void SetKey(){
         key = keyChecker();
     }
 
-    void EncryptString (char message[], char* encryptedMessage){
+    string PathChecker() {
+        string tempPath;
+        cout << "Please, enter the path to the file or the filename: ";
+        cin >> tempPath;
+        cin.ignore();
+
+        if ('/' != tempPath[0] || '.' != tempPath[0]){
+            tempPath = "./../" + tempPath;
+        }
+        return tempPath;
+
+    }
+    void EncryptString (textEditor* head){
+        char* message = head->GetLine();
+        char* encryptedMessage = new char[strlen(message) + 1];
         KeyCheck();
         // Allocate more memory for the encrypted message if necessary
         encrypt(message, key, encryptedMessage);
         cout << "Encrypted text: " << encryptedMessage << endl;
+
+        cout << "Do you want to save the encrypted message to a file? (y/n): ";
+        char answer;
+        cin >> answer;
+        cin.ignore();
+        if (answer == 'y') {
+            SaveStringIntoFile(encryptedMessage);
+        }
+        else{
+            cout << "The encrypted message is not saved. You can copy it:\n" << encryptedMessage << endl;
+        }
+        delete[] encryptedMessage;
     }
 
-    void DecryptString (char message[]){
+    void DecryptString (textEditor* head){
+        char* message = head->GetLine();
+        char* encryptedMessage = new char[strlen(message) + 1];
         KeyCheck();
         // Allocate more memory for the decrypted message if necessary
         char* decryptedMessage = new char[strlen(message) * 2]; // Change this according to your needs
         decrypt(message, key, decryptedMessage);
         cout << "Decrypted text: " << decryptedMessage << endl;
+
+        cout << "Do you want to save the decrypted message to a file? (y/n): ";
+        char answer;
+        cin >> answer;
+        cin.ignore();
+        if (answer == 'y') {
+            SaveStringIntoFile(decryptedMessage);
+        }
+        else{
+            cout << "The decrypted message is not saved. You can copy it:\n" << decryptedMessage << endl;
+        }
         delete[] decryptedMessage;
+
+
     }
 
     void UniversalEncryptor(textNode* startNode) {
@@ -482,6 +533,24 @@ public:
     ~EncryptConnector(){ // Add this destructor
         dlclose(handle);
     }
+
+    void SaveStringIntoFile(char* message = "", textNode* startNode = nullptr){
+        string path = this->PathChecker();
+        ofstream file(path);
+        if (file.is_open()) {
+            if (message != ""){
+                file << message;
+            }
+            else if (startNode != nullptr){
+                for (textNode* temp = startNode->next; temp != nullptr; temp = temp->next) {
+                    file << temp->data << endl;
+                }
+            }
+            file.close();
+        } else {
+            cout << "Unable to open file";
+        }
+    }
 };
 
 
@@ -492,6 +561,7 @@ public:
 
         textEditor head;
         EncryptConnector encryptor;
+        char* message;
 
         head.textEditorPreset("./../textStart.txt");
         bool isRunning = true;
@@ -512,6 +582,10 @@ public:
 
                 case 'k':
                     encryptor.SetKey();
+                    break;
+
+                case 'e':
+                    encryptor.EncryptString(&head);
                     break;
 
                 case 'w':
