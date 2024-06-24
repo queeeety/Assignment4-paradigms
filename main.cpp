@@ -152,7 +152,7 @@ public:
                 if ((i == currentIndex && j == currentLine) || (i == positions[1] && j == positions[0])) {
                     cout << "|";
                 }
-                if (j > currentLine && j < positions[0] && i > currentIndex & i < positions[1])
+                if (j < currentLine && j > positions[0] && i < currentIndex & i > positions[1])
                     cout << "\033[1;31m" << temp->data[i - 1] << "\033[0m" << endl;
                 else {
                     cout << temp->data[i - 1];
@@ -286,12 +286,7 @@ public:
         temp = temp->next;
         }
         chosen.print();
-
-
-
     }
-
-
 };
 
 /*
