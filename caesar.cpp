@@ -1,11 +1,12 @@
 #include <iostream>
-
+using namespace std;
 extern "C"{
 const int ASCII_A = 65;
 const int ASCII_Z = 90;
 const int ASCII_a = 97;
 const int ALPHABET_SIZE = 26;
 const char SKIP_SYMBOLS[] = {' ', '\n', '\t', '.', ',', '!', '?', ':', ';', '\'', '\"', '(', ')', '[', ']', '{', '}', '<', '>', '/', '\\', '|', '@', '#', '$', '%', '^', '&', '*', '-', '+', '=', '~', '`', '_'};
+
 
 bool is_skip_symbol(char c){
     for (int i = 0; i < sizeof(SKIP_SYMBOLS); i++){
@@ -58,7 +59,21 @@ void decrypt(char* text, int key, char* encr){
     encr[strlen(text)] = '\0';
 }
 
-
+int keyChecker(){
+    int key;
+    bool isRunning = true;
+    do {
+        cout << "Please, enter the key: ";
+        cin >> key;
+        cin.ignore();
+        if (key >= 0) {
+            isRunning = false;
+        } else {
+            cout << "I can not encrypt with negative key. Try again " << endl;
+        }
+    } while (isRunning);
+    return key;
+}
 
 
 }
