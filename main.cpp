@@ -562,7 +562,7 @@ public:
                 file << message;
             }
             else if (startNode != nullptr){
-                for (textNode* temp = startNode->next; temp != nullptr; temp = temp->next) {
+                for (textNode* temp = startNode; temp != nullptr; temp = temp->next) {
                     file << temp->data << endl;
                 }
             }
@@ -606,8 +606,6 @@ public:
                     encryptor.SetKey();
                     break;
 
-
-
                 case 'e':
                     encryptor.EncryptString(&head);
                     break;
@@ -615,6 +613,10 @@ public:
                 case 'i':
                     tempNode = head.HighLight();
                     encryptor.UniversalEnDecryptor(tempNode.get()->head.next, 0);
+                    break;
+
+                case '[':
+                    encryptor.UniversalEnDecryptor(head.head.next, 0);
                     break;
 
 
@@ -626,6 +628,10 @@ public:
                 case '0':
                     tempNode = head.HighLight();
                     encryptor.UniversalEnDecryptor(tempNode.get()->head.next, 1);
+                    break;
+
+                case ']':
+                    encryptor.UniversalEnDecryptor(head.head.next, 1);
                     break;
 
                 case 'w':
