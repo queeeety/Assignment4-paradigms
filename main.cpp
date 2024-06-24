@@ -145,11 +145,12 @@ public:
         for (int j = positions[0]; j <= currentLine; j++) {
             cout << j << ". ";
             for (int i = 1; i <= strlen(temp->data); i++) {
-                if ((i == currentIndex && j == currentLine) || (i == positions[1] && j == positions[0])) {
+                if ((j == positions[0] && i == positions[1]) || (j == currentLine && i == currentIndex)) {
                     cout << "|";
                 }
-                if (j < currentLine && j > positions[0] && i < currentIndex & i > positions[1])
-                    cout << "\033[1;31m" << temp->data[i - 1] << "\033[0m" << endl;
+                if (j <= currentLine && j >= positions[0] && ((j == positions[0] && i >= positions[1]) || (j > positions[0] && j < currentLine) || (j == currentLine && i < currentIndex))) {
+                    cout << "\033[1;31m" << temp->data[i - 1] << "\033[0m";
+                }
                 else {
                     cout << temp->data[i - 1];
                 }
@@ -249,7 +250,7 @@ public:
         std::cout << "\033[J";
     }
 
-    void HighLight() {
+    textNode HighLight() {
         char input = 'w';
         int position[] = {coursor.currentLine, coursor.currentIndex};
         cout << position[0] << " " << position[1] << endl;
@@ -291,7 +292,7 @@ public:
             delete[] current;
             temp = temp->next;
         }
-        chosen.print();
+        return chosen.head;
     }
 
     void PathChecker() {
@@ -528,13 +529,18 @@ public:
 
     }
 
-    void UniversalEncryptor(textNode* startNode) {
+    void UniversalEnDecryptor(textNode* startNode, int mode = 0) {
         KeyCheck();
         textEditor decrypted;
 
         for (textNode* temp = startNode->next; temp != nullptr; temp = temp->next) {
             char* encryptedMessage = new char[strlen(temp->data) * 2];
-            encrypt(temp->data, key, encryptedMessage);
+            if (mode == 0) {
+                encrypt(temp->data, key, encryptedMessage);
+            }
+            else if (mode == 1){
+                decrypt(temp->data, key, encryptedMessage);
+            }
             decrypted.insert(encryptedMessage);
             delete[] encryptedMessage;
         }
@@ -569,7 +575,7 @@ class UI{
 public:
     UI(){
         cout << "Welcome to the text encryptor\n";
-
+        textNode tempNode("");
         textEditor head;
         EncryptConnector encryptor;
         char* message;
@@ -597,20 +603,25 @@ public:
                     break;
 
 
-                    head.PathChecker();
-                    break;
 
                 case 'e':
                     encryptor.EncryptString(&head);
                     break;
 
                 case 'i':
-                    head.HighLight();
+                    tempNode = head.HighLight();
+                    encryptor.UniversalEnDecryptor(&tempNode);
                     break;
+
 
 
                 case 'l':
                     encryptor.DecryptString(&head);
+                    break;
+
+                case '0':
+                    tempNode = head.HighLight();
+                    encryptor.UniversalEnDecryptor(&tempNode);
                     break;
 
                 case 'w':
