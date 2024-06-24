@@ -188,12 +188,11 @@ public:
         coursor.Update(lines, &head);
     }
 
-    int CountLines(){
+    int CountLines() {
         int lineCounter = 0;
-        textNode* temp = &head;
+        textNode *temp = &head;
         temp = temp->next;
-        do
-        {
+        do {
             lineCounter++;
             temp = temp->next;
         } while (temp != nullptr);
@@ -214,7 +213,7 @@ public:
         }
     }
 
-    void insert(const char* input) {
+    void insert(const char *input) {
         textNode *new_node = new textNode(input);
 
         if (head.next == nullptr) {
@@ -228,7 +227,7 @@ public:
         }
     }
 
-    void print(){
+    void print() {
         textNode *temp = head.next;
         while (temp != nullptr) {
             cout << temp->data << endl;
@@ -243,12 +242,12 @@ public:
         std::cout << "\033[J";
     }
 
-    void HighLight(){
+    void HighLight() {
         char input = 'w';
         int position[] = {coursor.currentLine, coursor.currentIndex};
         cout << position[0] << " " << position[1] << endl;
         cout << "Go on, press any letter but 'w' 'a' 's' 'd' to end:" << endl;
-        while (input == 'w' || input == 'a' || input == 's' || input == 'd'){
+        while (input == 'w' || input == 'a' || input == 's' || input == 'd') {
             cin >> input;
             cin.ignore();
             switch (input) {
@@ -271,21 +270,43 @@ public:
         textEditor chosen;
         textNode *temp = &head;
         temp = temp->next;
-        for (int i = 1; i < position[0]; i++){
+        for (int i = 1; i < position[0]; i++) {
             temp = temp->next;
         }
 
-        for (int i = position[0]; i <= endPosition[0]; i++){
-            char* current = new char [strlen(temp->data) + 1];
-            for (int j = position[1]; j <= endPosition[1]; j++){
-                current[j-position[1]] = temp->data[j-1];
+        for (int i = position[0]; i <= endPosition[0]; i++) {
+            char *current = new char[strlen(temp->data) + 1];
+            for (int j = position[1]; j <= endPosition[1]; j++) {
+                current[j - position[1]] = temp->data[j - 1];
             }
-        current[endPosition[1]-position[1]] = '\0';
-        chosen.insert(current);
-        delete[] current;
-        temp = temp->next;
+            current[endPosition[1] - position[1]] = '\0';
+            chosen.insert(current);
+            delete[] current;
+            temp = temp->next;
         }
         chosen.print();
+    }
+
+    void PathChecker() {
+        string tempPath;
+        CheckPoint:
+            cout << "Please, enter the path to the file: ";
+            cin >> path;
+            cin.ignore();
+
+            if ('/' != tempPath[0] || '.' != tempPath[0]){
+                tempPath = "./../" + path;
+            }
+
+            ifstream file(tempPath);
+            if (!file.is_open()) {
+                cout << "File not found\n";
+                goto CheckPoint;
+            }
+            else{
+                path = tempPath;
+                cout << "Path changed\n";
+            }
     }
 };
 
@@ -378,6 +399,9 @@ public:
     void* handle; // to store the handle
     int (*encrypt)(char*,int,char*);
     int (*decrypt)(char*,int,char*);
+    int (*keyChecker)();
+    int key = -1;
+
 
     EncryptConnector(){
         // Load the dynamic library
@@ -402,40 +426,52 @@ public:
             fprintf(stderr, "Error loading 'decrypt' function: %s\n", error);
             exit(EXIT_FAILURE);
         }
+
+        // Load the key function from the library
+        *(void**)(&keyChecker) = dlsym(handle, "keyChecker");
+        error = dlerror();
+        if (error != NULL) {
+            fprintf(stderr, "Error loading 'keyChecker' function: %s\n", error);
+            exit(EXIT_FAILURE);
+        }
     }
 
-    int keyChecker(){
-        int key;
-        bool isRunning = true;
-        do {
-            cout << "Please, enter the key: ";
-            cin >> key;
-            cin.ignore();
-            if (key >= 0) {
-                isRunning = false;
-            } else {
-                cout << "I can not encrypt with negative key. Try again " << endl;
-            }
-        } while (isRunning);
-        return key;
+    void KeyCheck(){
+        if (key == -1){
+            key = keyChecker();
+        }
+        else {
+            key = keyChecker();
+        }
     }
 
-    void EncryptMessage (char message[]){
-        int key = keyChecker();
+    void EncryptString (char message[], char* encryptedMessage){
+        KeyCheck();
         // Allocate more memory for the encrypted message if necessary
-        char* encryptedMessage = new char[strlen(message) * 2]; // Change this according to your needs
         encrypt(message, key, encryptedMessage);
         cout << "Encrypted text: " << encryptedMessage << endl;
-        delete[] encryptedMessage;
     }
 
-    void DecryptMessage (char message[]){
-        int key = keyChecker();
+    void DecryptString (char message[]){
+        KeyCheck();
         // Allocate more memory for the decrypted message if necessary
         char* decryptedMessage = new char[strlen(message) * 2]; // Change this according to your needs
         decrypt(message, key, decryptedMessage);
         cout << "Decrypted text: " << decryptedMessage << endl;
         delete[] decryptedMessage;
+    }
+
+    void UniversalEncryptor(textNode* startNode) {
+        KeyCheck();
+        textEditor decrypted;
+
+        for (textNode* temp = startNode->next; temp != nullptr; temp = temp->next) {
+            char* encryptedMessage = new char[strlen(temp->data) * 2];
+            encrypt(temp->data, key, encryptedMessage);
+            decrypted.insert(encryptedMessage);
+            delete[] encryptedMessage;
+        }
+        decrypted.print();
     }
     ~EncryptConnector(){ // Add this destructor
         dlclose(handle);
@@ -454,75 +490,16 @@ public:
         while (isRunning) {
             char answer = getCommand();
             switch (answer) {
-//                case 'l':
-//                    head.lineChecker();
-//                    break;
 
                 case 'p':
                     head.print();
                     break;
 
-//                case '0':
-//                    head.lineAppend();
-//                    break;
-
-//                case '1':
-//                    head.AddNewLine();
-//                    break;
-
-                case '2':
-                    head.insert("\n");
-                    cout << "New line was started\n";
+                case 'r':
+                    head.PathChecker();
                     break;
+                    
 
-//                case '3':
-//                    head.deleter();
-//                    break;
-
-                case '4':
-                    head.read();
-                    break;
-
-//                case '5':
-//                    head.insertWithReplacement();
-//                    break;
-
-//                case '6':
-//                    head.textAddIntoLineByIndex();
-//                    break;
-
-//                case '7':
-//                    head.searcher();
-//                    break;
-
-                case '8':
-                    system("clear");
-                    break;
-
-                case 'h':
-                    printMenu();
-                    break;
-
-//                case 'u':
-//                    head.Undo();
-//                    break;
-
-//                case 'r':
-//                    head.Redo();
-//                    break;
-
-//                case 'c':
-//                    head.Copy();
-//                    break;
-
-//                case 'v':
-//                    head.Paste();
-//                    break;
-
-//                case 'x':
-//                    CleanConsole();
-//                    head.Cut();
-//                    break;
 
                 case 'w':
                     CleanConsole();
@@ -543,6 +520,10 @@ public:
                     head.coursor.pointHorizontalMove(1, (int[]){-1, -1});
                     break;
 
+                case 'h':
+                    printMenu();
+                    break;
+
                 case 'q':
                     isRunning = false;
                     break;
@@ -559,22 +540,22 @@ public:
 
     void static printMenu(){
         cout << "Please, choose the option:\n"
-             << "l - change line\n"
-             << "p - print all lines\n"
-             << "0 - append existing line in the file\n"
-             << "1 - add new line to the end of the file\n"
-             << "2 - start a new line\n"
-             << "3 - delete some symbols\n"
-             << "4 - read the file\n"
-             << "5 - insert with replacement\n"
-             << "6 - add some text by line and symbol index\n"
-             << "7 - search a text\n"
-             << "8 - clear the console\n"
-             << "u - undo\n"
-             << "r - redo\n"
-             << "c - copy\n"
-             << "v - paste\n"
-             << "x - cut\n"
+            << "1 - change the origin's path\n"
+            << "2 - change the destination's path\n"
+            << "p - print the text\n"
+            << "r - read the text from the file\n"
+            << "k - set the key \n"
+
+            << "Encryption:\n"
+                << "    e - encrypt the line\n"
+                << "    i - highlight and encrypt\n"
+                << "    [ - encrypt the whole text\n"
+                << "    9 - encrypt the whole file without opening\n"
+            << "Decryption:\n"
+                << "    d - decrypt the line\n"
+                << "    o - highlight and decrypt\n"
+                << "    ] - decrypt the whole text\n"
+                << "    0 - decrypt the whole file without opening\n"
              << "Pointer:\n"
              << "    w - move up\n"
              << "    s - move down\n"
@@ -604,10 +585,8 @@ public:
 };
 
 int main() {
-//    UI ui;
-    textEditor head;
-    head.textEditorPreset("./../textStart.txt");
-    head.HighLight();
+    UI ui;
+
     return 0;
 
 }
