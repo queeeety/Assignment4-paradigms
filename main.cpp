@@ -243,14 +243,8 @@ public:
         }
     }
 
-    void deleteLines(int numLines) {
-        // Move the cursor up numLines lines
-        std::cout << "\033[" << numLines << "A";
-        // Clear from the cursor position to the end of the screen
-        std::cout << "\033[J";
-    }
 
-    textNode HighLight() {
+    unique_ptr<textEditor> HighLight() {
         char input = 'w';
         int position[] = {coursor.currentLine, coursor.currentIndex};
         cout << position[0] << " " << position[1] << endl;
@@ -275,24 +269,23 @@ public:
         }
 
         int endPosition[] = {coursor.currentLine, coursor.currentIndex};
-        textEditor chosen;
         textNode *temp = &head;
         temp = temp->next;
         for (int i = 1; i < position[0]; i++) {
             temp = temp->next;
         }
-
+        unique_ptr<textEditor> chosen = make_unique<textEditor>();
         for (int i = position[0]; i <= endPosition[0]; i++) {
             char *current = new char[strlen(temp->data) + 1];
             for (int j = position[1]; j <= endPosition[1]; j++) {
                 current[j - position[1]] = temp->data[j - 1];
             }
             current[endPosition[1] - position[1]] = '\0';
-            chosen.insert(current);
+            chosen->insert(current);
             delete[] current;
             temp = temp->next;
         }
-        return chosen.head;
+        return chosen;
     }
 
     void PathChecker() {
@@ -532,8 +525,7 @@ public:
     void UniversalEnDecryptor(textNode* startNode, int mode = 0) {
         KeyCheck();
         textEditor decrypted;
-
-        for (textNode* temp = startNode->next; temp != nullptr; temp = temp->next) {
+        for (textNode* temp = startNode; temp != nullptr; temp = temp->next) {
             char* encryptedMessage = new char[strlen(temp->data) * 2];
             if (mode == 0) {
                 encrypt(temp->data, key, encryptedMessage);
@@ -544,7 +536,19 @@ public:
             decrypted.insert(encryptedMessage);
             delete[] encryptedMessage;
         }
+        cout << "Done! your text is:\n";
         decrypted.print();
+        cout <<"Do you want to save the text to a file? (y/n): ";
+        char answer;
+        cin >> answer;
+        cin.ignore();
+        if (answer == 'y') {
+            SaveStringIntoFile("", decrypted.head.next);
+        }
+        else{
+            cout << "The text is not saved. You can copy it, though:\n";
+            decrypted.print();
+        }
     }
     ~EncryptConnector(){ // Add this destructor
         dlclose(handle);
@@ -575,7 +579,7 @@ class UI{
 public:
     UI(){
         cout << "Welcome to the text encryptor\n";
-        textNode tempNode("");
+        unique_ptr<textEditor> tempNode;
         textEditor head;
         EncryptConnector encryptor;
         char* message;
@@ -610,7 +614,7 @@ public:
 
                 case 'i':
                     tempNode = head.HighLight();
-                    encryptor.UniversalEnDecryptor(&tempNode);
+                    encryptor.UniversalEnDecryptor(tempNode.get()->head.next, 0);
                     break;
 
 
@@ -621,7 +625,7 @@ public:
 
                 case '0':
                     tempNode = head.HighLight();
-                    encryptor.UniversalEnDecryptor(&tempNode);
+                    encryptor.UniversalEnDecryptor(tempNode.get()->head.next, 1);
                     break;
 
                 case 'w':
