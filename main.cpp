@@ -419,6 +419,7 @@ public:
     int (*encrypt)(char*,int,char*);
     int (*decrypt)(char*,int,char*);
     int (*keyChecker)();
+    void (*filer)(int);
     int key = -1;
 
 
@@ -451,6 +452,14 @@ public:
         error = dlerror();
         if (error != NULL) {
             fprintf(stderr, "Error loading 'keyChecker' function: %s\n", error);
+            exit(EXIT_FAILURE);
+        }
+
+        // Load the filer function from the library
+        *(void**)(&filer) = dlsym(handle, "filer");
+        error = dlerror();
+        if (error != NULL) {
+            fprintf(stderr, "Error loading 'filer' function: %s\n", error);
             exit(EXIT_FAILURE);
         }
     }
@@ -619,13 +628,20 @@ public:
                     encryptor.UniversalEnDecryptor(head.head.next, 0);
                     break;
 
+                case '9':
+                    encryptor.filer(0);
+                    break;
+
+                case '0':
+                    encryptor.filer(1);
+                    break;
 
 
                 case 'l':
                     encryptor.DecryptString(&head);
                     break;
 
-                case '0':
+                case 'o':
                     tempNode = head.HighLight();
                     encryptor.UniversalEnDecryptor(tempNode.get()->head.next, 1);
                     break;

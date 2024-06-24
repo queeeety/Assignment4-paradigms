@@ -1,4 +1,7 @@
 #include <iostream>
+#include <string>
+#include <fstream>
+
 using namespace std;
 
 extern "C"{
@@ -6,7 +9,7 @@ extern "C"{
     const int ASCII_Z = 90;
     const int ASCII_a = 97;
     const int ALPHABET_SIZE = 26;
-    const char SKIP_SYMBOLS[] = {' ', '\n', '\t', '.', ',', '!', '?', ':', ';', '\'', '\"', '(', ')', '[', ']', '{', '}', '<', '>', '/', '\\', '|', '@', '#', '$', '%', '^', '&', '*', '-', '+', '=', '~', '`', '_'};
+    const char SKIP_SYMBOLS[] = {' ', '\n', '\t', '.', ',', '!', '?', ':', ';', '\'', '\"', '(', ')', '[', ']', '{', '}', '<', '>', '/', '\\', '|', '@', '#', '$', '%', '^', '&', '*', '-', '+', '=', '~', '`', '_', 39};
 
 
     bool is_skip_symbol(char c){
@@ -86,4 +89,61 @@ extern "C"{
     }
 
 
+    string PathFinder(string text, int mode = 0) {
+        string tempPath;
+        CheckPoint:
+        cout << text;
+        cin >> tempPath;
+        cin.ignore();
+
+        if ('/' != tempPath[0] || '.' != tempPath[0]){
+            tempPath = "./../" + tempPath;
+        }
+        if (mode == 0) {
+            ifstream file(tempPath);
+            if (!file.is_open()) {
+                cout << "File not found\n";
+                goto CheckPoint;
+            } else {
+                cout << "File found!\n";
+            }
+        }
+        return tempPath;
+    }
+
+    void filer(int mode = 0){
+        string originPath = PathFinder("Enter the path to the file you want to encrypt: ");
+
+        string endPath;
+        do{
+            endPath = PathFinder("Enter the path to the file in which you want to save encrypted text: ", 1);
+            if (originPath == endPath)
+                cout << "You can not encrypt the file in the same file. Try again\n";
+        }while (originPath == endPath);
+        int key = keyChecker();
+        ifstream file(originPath);
+        ofstream outFile(endPath, ios::trunc);
+        string text;
+        string encrText;
+
+        while (!file.eof()) {
+            getline(file, text);
+            char* cstr = new char[text.length() + 1];
+            strcpy(cstr, text.c_str()); // c_str() returns a pointer to an array
+            char* encr = new char[text.length() + 1];
+            if (mode == 0) {
+                encrypt(cstr, key, encr);
+            }
+            else if (mode == 1){
+                decrypt(cstr, key, encr);
+            }
+            outFile << encr << endl;
+            delete[] cstr;
+            delete[] encr;
+        }
+        file.close();
+        outFile.close();
+
+        cout << "The file is "<< (mode == 1 ? "de": "en") <<"crypted!\n";
+    }
 }
