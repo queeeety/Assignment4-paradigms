@@ -179,6 +179,7 @@ public:
 
     void textEditorPreset(string path) {
         this->path = path;
+        this->clean();
         this->read();
         int lines = this->CountLines();
         coursor.Update(lines, &head);
@@ -194,7 +195,16 @@ public:
         } while (temp != nullptr);
         return lineCounter;
     }
-
+    void clean(){
+        textNode *temp = head.next;
+        while (temp != nullptr) {
+            textNode *next = temp->next;
+            delete[] temp->data;
+            delete temp;
+            temp = next;
+        }
+        head.next = nullptr;
+    }
     void read() {
         ifstream file(path);
         char str[MAX_STRING_SIZE];
@@ -547,6 +557,7 @@ public:
                 }
             }
             file.close();
+            cout<< "The message is saved\n";
         } else {
             cout << "Unable to open file";
         }
@@ -574,9 +585,10 @@ public:
                     head.print();
                     break;
 
-                case 'r':
+                case '1':
                     head.PathChecker();
                     head.textEditorPreset(head.path);
+                    cout << "The path is set, The new text was uploaded\n";
                     head.print();
                     break;
 
@@ -584,8 +596,21 @@ public:
                     encryptor.SetKey();
                     break;
 
+
+                    head.PathChecker();
+                    break;
+
                 case 'e':
                     encryptor.EncryptString(&head);
+                    break;
+
+                case 'i':
+                    head.HighLight();
+                    break;
+
+
+                case 'l':
+                    encryptor.DecryptString(&head);
                     break;
 
                 case 'w':
@@ -621,6 +646,7 @@ public:
             }
         }
     }
+
     void static CleanConsole(){
         system("clear");
     }
@@ -630,7 +656,6 @@ public:
             << "1 - change the origin's path\n"
             << "2 - change the destination's path\n"
             << "p - print the text\n"
-            << "r - read the text from the file\n"
             << "k - set the key \n"
 
             << "Encryption:\n"
@@ -639,7 +664,7 @@ public:
                 << "    [ - encrypt the whole text\n"
                 << "    9 - encrypt the whole file without opening\n"
             << "Decryption:\n"
-                << "    d - decrypt the line\n"
+                << "    l - decrypt the line\n"
                 << "    o - highlight and decrypt\n"
                 << "    ] - decrypt the whole text\n"
                 << "    0 - decrypt the whole file without opening\n"
@@ -667,6 +692,7 @@ public:
     void static printProcessFinished(){
         cout << "Process finished.\n";
     }
+
 
 
 };
