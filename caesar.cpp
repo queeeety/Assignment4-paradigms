@@ -5,6 +5,7 @@
 using namespace std;
 
 extern "C"{
+    string typicalPath = "/Users/tim_bzz/Documents/projects/Clion/Paradigms/Assignment4";
     const int ASCII_A = 65;
     const int ASCII_Z = 90;
     const int ASCII_a = 97;
@@ -89,34 +90,37 @@ extern "C"{
     }
 
 
-    string PathFinder(string text, int mode = 0) {
+    char* PathFinder(string text, int mode = 0) {
         string tempPath;
         CheckPoint:
         cout << text;
         cin >> tempPath;
         cin.ignore();
-
-        if ('/' != tempPath[0] || '.' != tempPath[0]){
-            tempPath = "./../" + tempPath;
-        }
         if (mode == 0) {
             ifstream file(tempPath);
             if (!file.is_open()) {
-                cout << "File not found\n";
-                goto CheckPoint;
+                tempPath = typicalPath + tempPath;
+                file.open(tempPath);
+                if (!file.is_open()) {
+                    cout << "File not found\n";
+                    goto CheckPoint;
+                }
             } else {
                 cout << "File found!\n";
             }
+            file.close();
         }
-        return tempPath;
+        char* cstr = new char[tempPath.length() + 1];
+        strcpy(cstr, tempPath.c_str());
+        return cstr;
     }
 
     void filer(int mode = 0){
-        string originPath = PathFinder("Enter the path to the file you want to encrypt: ");
+        string originPath = PathFinder("Enter the path to the file you want to encrypt: \n");
 
         string endPath;
         do{
-            endPath = PathFinder("Enter the path to the file in which you want to save encrypted text: ", 1);
+            endPath = PathFinder("Enter the path to the file in which you want to save encrypted text: \n", 1);
             if (originPath == endPath)
                 cout << "You can not encrypt the file in the same file. Try again\n";
         }while (originPath == endPath);

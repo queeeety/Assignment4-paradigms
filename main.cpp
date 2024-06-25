@@ -3,16 +3,12 @@
 #include <iostream>
 #include <dlfcn.h>
 #include <string>
+#include <memory>
 
 using namespace std;
 
 #define MAX_STRING_SIZE 1024
-
-struct MyStringHAHAIDIDIT {
-    char* data;
-    long lineNumber;
-};
-
+string TYPICAL_PATH = "/Users/tim_bzz/Documents/projects/Clion/Paradigms/Assignment4/";
 
 class textEditor;
 class textNode;
@@ -29,12 +25,8 @@ public:
         this->data = new char[strlen(text) + 1];
         strcpy(this->data, text);
         this->next = nullptr;
+        cout << "Text node created\n";
     }
-
-//    ~textNode() { // destructor to free memory
-//        delete[] this->data;
-//    }
-
 };
 
 class Coursor{
@@ -49,12 +41,18 @@ public:
         maxLines = max;
     }
 
+    textNode* AdvanceToLine(int lineNumber) {
+        textNode *temp = text;
+        temp = temp->next;
+        for (int i = 1; i < lineNumber; i++)
+            temp = temp->next;
+        return temp;
+    }
+
     void pointVerticalMove(int direction, int positions[]){
         currentLine = (currentLine + direction) > maxLines ? maxLines :
                       (currentLine + direction) <= 1 ? 1 : currentLine + direction;
-        textNode* temp = text;
-        for (int i = 1; i < currentLine; i++)
-            temp = temp->next;
+        textNode* temp = AdvanceToLine(currentLine);
         if (currentIndex > strlen(temp->data)) {
             currentIndex = strlen(temp->data) > 0 ? strlen(temp->data)+1 : 1;
         }
@@ -67,10 +65,7 @@ public:
     }
 
     void pointHorizontalMove(int direction, int positions[]){
-        textNode *temp = text;
-        temp = temp->next;
-        for (int i = 1; i < currentLine; i++)
-            temp = temp->next;
+        textNode *temp = AdvanceToLine(currentLine);
 
         if (currentIndex + direction > strlen(temp->data) + 1){
             if (currentLine < maxLines){
@@ -172,8 +167,9 @@ public:
 class textEditor {
 public:
     textNode head;
-    string path = "./../textStart.txt";
+    string path = "";
     Coursor coursor;
+
 
     textEditor() : head("") {
     }
@@ -182,8 +178,11 @@ public:
         this->path = path;
         this->clean();
         this->read();
+        cout << "checkpoint 3 func\n";
         int lines = this->CountLines();
+        cout << "checkpoint 4 func\n";
         coursor.Update(lines, &head);
+        cout << "checkpoint 5 func\n";
     }
 
     int CountLines() {
@@ -207,18 +206,21 @@ public:
         head.next = nullptr;
     }
     void read() {
-        ifstream file(path);
         char str[MAX_STRING_SIZE];
-        if (file.is_open()) {
-            while (file.getline(str, MAX_STRING_SIZE)) {
-                this->insert(str);
-            }
-            file.close();
-            coursor.Update(CountLines(), &head);
-        } else {
-            cout << "Unable to open file";
+        bool ispath = false;
+        CheckPoint:
+        ifstream file(path);
+        if (!file.is_open()) {
+            cout << "The start file was not found\n";
+            PathChecker();
+            goto CheckPoint;
         }
-
+        cout << "Checkpoint opening file while reading\n";
+        while (file.getline(str, MAX_STRING_SIZE)) {
+            this->insert(str);
+        }
+        file.close();
+        coursor.Update(CountLines(), &head);
     }
 
     void insert(const char *input) {
@@ -274,7 +276,7 @@ public:
         for (int i = 1; i < position[0]; i++) {
             temp = temp->next;
         }
-        unique_ptr<textEditor> chosen = make_unique<textEditor>();
+        unique_ptr<textEditor> chosen(new textEditor());
         for (int i = position[0]; i <= endPosition[0]; i++) {
             char *current = new char[strlen(temp->data) + 1];
             for (int j = position[1]; j <= endPosition[1]; j++) {
@@ -290,22 +292,23 @@ public:
 
     void PathChecker() {
         string tempPath;
-        CheckPoint:
-            cout << "Please, enter the path to the file: ";
-            cin >> tempPath;
-            cin.ignore();
-
-            if ('/' != tempPath[0] || '.' != tempPath[0]){
-                tempPath = "./../" + tempPath;
-            }
+            do {
+                cout << "Please, enter the path to the file: \n";
+                cin >> tempPath;
+                cin.ignore();
+                tempPath = TYPICAL_PATH + tempPath;
                 ifstream file(tempPath);
+                cout << "Checkpoint opening file\n";
                 if (!file.is_open()) {
                     cout << "File not found\n";
-                    goto CheckPoint;
-                } else {
-                    path = tempPath;
-                    cout << "Path changed\n";
                 }
+                else {
+                    cout << "Checkpoint finding file\n";
+                    path = tempPath;
+                    file.close();
+                    break;
+                }
+            } while (true);
 
     }
 
@@ -329,89 +332,6 @@ public:
 
 };
 
-/*
-class UndoRedoManager {
-public:
-
-
-    void CheckStack(char WhatStack){
-        if (WhatStack == 'u'){
-            if (undoStack.size() >= 3){
-                delete[] undoStack.front().data;
-                undoStack.pop_front();
-            }
-        }
-        else if (WhatStack == 'r'){
-            if (redoStack.size() >= 3){
-                delete[] redoStack.front().data;
-                redoStack.pop_front();
-            }
-        }
-    }
-
-    void StackFulfill(char* input_str, long line_number){
-        MyStringHAHAIDIDIT input{};
-        input.data = new char[strlen(input_str) + 1];
-        strcpy(input.data, input_str);
-        input.lineNumber = line_number;
-        // If the undo stack already contains 3 elements, pop the oldest one
-        CheckStack('u');
-        undoStack.push_front(input);
-    }
-
-    void Undo(textNode* node){
-        if (undoStack.empty()){
-            cout << "Nothing to undo" << endl;
-            return;
-        }
-        MyStringHAHAIDIDIT temp = undoStack.back();
-        undoStack.pop_back();
-
-        textNode* temporaryNode = node;
-        for (int i = 1; i <= temp.lineNumber; i++)
-            temporaryNode = temporaryNode->next;
-
-        MyStringHAHAIDIDIT tempNode;
-        tempNode.data = new char[strlen(temporaryNode->data) + 1]; // allocate memory with new[]
-        strcpy(tempNode.data, temporaryNode->data); // copy the data
-        tempNode.lineNumber = temp.lineNumber;
-        CheckStack('r');
-        redoStack.push_front(tempNode);
-
-        delete[] temporaryNode->data; // delete old memory
-        temporaryNode->data = new char[strlen(temp.data) + 1]; // allocate new memory
-        strcpy(temporaryNode->data, temp.data); // copy the data
-
-        cout << "Undo: the " << temp.lineNumber << " line go back to " << temp.data << endl;
-    }
-
-    void Redo(textNode* node){
-        if (redoStack.empty()){
-            cout << "Nothing to redo" << endl;
-            return;
-        }
-        MyStringHAHAIDIDIT temporary = redoStack.front();
-        redoStack.pop_front();
-
-        textNode* temporaryNode = node;
-        for (int i = 1; i <= temporary.lineNumber; i++)
-            temporaryNode = temporaryNode->next;
-
-        MyStringHAHAIDIDIT oldNode;
-        oldNode.data = new char[strlen(temporaryNode->data) + 1]; // allocate memory with new[]
-        strcpy(oldNode.data, temporaryNode->data); // copy the data
-        oldNode.lineNumber = temporary.lineNumber;
-        CheckStack('u');
-        undoStack.push_front(oldNode);
-
-        delete[] temporaryNode->data; // delete old memory
-        temporaryNode->data = new char[strlen(temporary.data) + 1]; // allocate new memory
-        strcpy(temporaryNode->data, temporary.data); // copy the data
-
-        cout << "Redo: the " << temporary.lineNumber << " line went back to " << temporary.data << endl;
-    }
-};
-*/
 class EncryptConnector{
 public:
 
@@ -425,43 +345,41 @@ public:
 
     EncryptConnector(){
         // Load the dynamic library
-        handle = dlopen("/Users/tim_bzz/Documents/projects/Clion/Paradigms/Assignment4/libcaesar.so", RTLD_LAZY);
+        cout << "Checkpoint start loading\n";
+        handle = dlopen("/Users/tim_bzz/Documents/projects/Clion/Paradigms/Assignment4/caesar.so", RTLD_LAZY);
         if (!handle) {
             fprintf(stderr, "Error loading library: %s\n", dlerror());
-            exit(EXIT_FAILURE);
+            throw runtime_error("Error loading library: " + string(dlerror()) + "\n");
         }
-
+        cout << "Checkpoint 1 func\n";
         // Load the encrypt function from the library
         *(void**)(&encrypt) = dlsym(handle, "encrypt");
         char* error = dlerror();
         if (error != NULL) {
-            fprintf(stderr, "Error loading 'encrypt' function: %s\n", error);
-            exit(EXIT_FAILURE);
+            throw runtime_error("Error loading 'encrypt' function: " + string(error) + "\n");
         }
-
+        cout << "checkpoint 2 func\n";
         // Load the decrypt function from the library
         *(void**)(&decrypt) = dlsym(handle, "decrypt");
         error = dlerror();
         if (error != NULL) {
-            fprintf(stderr, "Error loading 'decrypt' function: %s\n", error);
-            exit(EXIT_FAILURE);
+            throw runtime_error("Error loading 'encrypt' function: " + string(error) + "\n");
         }
-
+        cout << "checkpoint 3 func\n";
         // Load the key function from the library
         *(void**)(&keyChecker) = dlsym(handle, "keyChecker");
         error = dlerror();
         if (error != NULL) {
-            fprintf(stderr, "Error loading 'keyChecker' function: %s\n", error);
-            exit(EXIT_FAILURE);
+            throw runtime_error("Error loading 'encrypt' function: " + string(error) + "\n");
         }
-
+        cout << "checkpoint 4 func\n";
         // Load the filer function from the library
         *(void**)(&filer) = dlsym(handle, "filer");
         error = dlerror();
         if (error != NULL) {
-            fprintf(stderr, "Error loading 'filer' function: %s\n", error);
-            exit(EXIT_FAILURE);
+            throw runtime_error("Error loading 'encrypt' function: " + string(error) + "\n");
         }
+        cout << "Encryption functions loaded\n";
     }
 
     void KeyCheck(){
@@ -476,13 +394,10 @@ public:
 
     string PathChecker() {
         string tempPath;
-        cout << "Please, enter the path to the file or the filename: ";
+        cout << "Please, enter the path to the file or the filename: \n";
         cin >> tempPath;
         cin.ignore();
-
-        if ('/' != tempPath[0] || '.' != tempPath[0]){
-            tempPath = "./../" + tempPath;
-        }
+        tempPath = TYPICAL_PATH + tempPath;
         return tempPath;
 
     }
@@ -494,7 +409,7 @@ public:
         encrypt(message, key, encryptedMessage);
         cout << "Encrypted text: " << encryptedMessage << endl;
 
-        cout << "Do you want to save the encrypted message to a file? (y/n): ";
+        cout << "Do you want to save the encrypted message to a file? (y/n): \n";
         char answer;
         cin >> answer;
         cin.ignore();
@@ -516,7 +431,7 @@ public:
         decrypt(message, key, decryptedMessage);
         cout << "Decrypted text: " << decryptedMessage << endl;
 
-        cout << "Do you want to save the decrypted message to a file? (y/n): ";
+        cout << "Do you want to save the decrypted message to a file? (y/n): \n";
         char answer;
         cin >> answer;
         cin.ignore();
@@ -559,27 +474,24 @@ public:
             decrypted.print();
         }
     }
-    ~EncryptConnector(){ // Add this destructor
+
+    ~EncryptConnector(){
         dlclose(handle);
     }
 
-    void SaveStringIntoFile(char* message = "", textNode* startNode = nullptr){
+    void SaveStringIntoFile(const char* message = "", textNode* startNode = nullptr){
         string path = this->PathChecker();
         ofstream file(path);
-        if (file.is_open()) {
-            if (message != ""){
-                file << message;
-            }
-            else if (startNode != nullptr){
-                for (textNode* temp = startNode; temp != nullptr; temp = temp->next) {
-                    file << temp->data << endl;
-                }
-            }
-            file.close();
-            cout<< "The message is saved\n";
-        } else {
-            cout << "Unable to open file";
+        if (message != string("")){
+            file << message;
         }
+        else if (startNode != nullptr){
+            for (textNode* temp = startNode; temp != nullptr; temp = temp->next) {
+                file << temp->data << endl;
+            }
+        }
+        file.close();
+        cout<< "The message is saved\n";
     }
 };
 
@@ -588,12 +500,16 @@ class UI{
 public:
     UI(){
         cout << "Welcome to the text encryptor\n";
-        unique_ptr<textEditor> tempNode;
+        cout << "Loading...\n";
         textEditor head;
+        cout << "Head went good\n";
         EncryptConnector encryptor;
-        char* message;
+        cout << "Encryptor went good\n";
+        unique_ptr<textEditor> tempNode;
+        cout<< "Unique went good\n";
 
-        head.textEditorPreset("./../textStart.txt");
+        head.textEditorPreset("textStar.txt");
+        cout << "The path is set, The new text was uploaded\n";
         bool isRunning = true;
         printMenu();
         while (isRunning) {
