@@ -5,7 +5,7 @@
 using namespace std;
 
 extern "C"{
-    string typicalPath = "/Users/tim_bzz/Documents/projects/Clion/Paradigms/Assignment4";
+    string typicalPath = "/Users/tim_bzz/Documents/projects/Clion/Paradigms/Assignment4/";
     const int ASCII_A = 65;
     const int ASCII_Z = 90;
     const int ASCII_a = 97;
@@ -82,7 +82,7 @@ extern "C"{
             if (key >= 0) {
                 isRunning = false;
             } else {
-                cout << "I can not encrypt with negative key. Try again " << endl;
+                cout << "I can not encrypt with negative key. Try again \n" << endl;
             }
         } while (isRunning);
         cout << "The key is set!\n";
@@ -95,14 +95,14 @@ extern "C"{
         CheckPoint:
         cout << text;
         cin >> tempPath;
-        cin.ignore();
-        if (mode == 0) {
+         if (mode == 0) {
             ifstream file(tempPath);
             if (!file.is_open()) {
                 tempPath = typicalPath + tempPath;
                 file.open(tempPath);
                 if (!file.is_open()) {
                     cout << "File not found\n";
+                    cout << tempPath;
                     goto CheckPoint;
                 }
             } else {

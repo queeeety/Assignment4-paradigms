@@ -25,7 +25,6 @@ public:
         this->data = new char[strlen(text) + 1];
         strcpy(this->data, text);
         this->next = nullptr;
-        cout << "Text node created\n";
     }
 };
 
@@ -127,7 +126,6 @@ public:
     }
 
     void pointHVisualisator(int positions[]){
-        cout << positions[0] << " " << positions[1] << endl;
         textNode *temp = text;
         temp = temp->next;
         for (int i = 1; i < positions[0]-1; i++)
@@ -178,11 +176,8 @@ public:
         this->path = path;
         this->clean();
         this->read();
-        cout << "checkpoint 3 func\n";
         int lines = this->CountLines();
-        cout << "checkpoint 4 func\n";
         coursor.Update(lines, &head);
-        cout << "checkpoint 5 func\n";
     }
 
     int CountLines() {
@@ -215,7 +210,6 @@ public:
             PathChecker();
             goto CheckPoint;
         }
-        cout << "Checkpoint opening file while reading\n";
         while (file.getline(str, MAX_STRING_SIZE)) {
             this->insert(str);
         }
@@ -249,7 +243,6 @@ public:
     unique_ptr<textEditor> HighLight() {
         char input = 'w';
         int position[] = {coursor.currentLine, coursor.currentIndex};
-        cout << position[0] << " " << position[1] << endl;
         cout << "Go on, press any letter but 'w' 'a' 's' 'd' to end:" << endl;
         while (input == 'w' || input == 'a' || input == 's' || input == 'd') {
             cin >> input;
@@ -273,19 +266,28 @@ public:
         int endPosition[] = {coursor.currentLine, coursor.currentIndex};
         textNode *temp = &head;
         temp = temp->next;
+        int symbolCount = 0;
         for (int i = 1; i < position[0]; i++) {
             temp = temp->next;
         }
         unique_ptr<textEditor> chosen(new textEditor());
         for (int i = position[0]; i <= endPosition[0]; i++) {
             char *current = new char[strlen(temp->data) + 1];
-            for (int j = position[1]; j <= endPosition[1]; j++) {
-                current[j - position[1]] = temp->data[j - 1];
+            for (int j = 1; j <= strlen(temp->data); j++) {
+                if ((i == position[0] && i != endPosition[0] && j >= position[1])
+                || (i == position[0] && i == endPosition[0] && j >= position[1] && j < endPosition[1])
+                || (i > position[0] && i < endPosition[0])
+                || (i == endPosition[0] && j < endPosition[1]))
+                {
+                    current[symbolCount] = temp->data[j - 1];
+                    symbolCount++;
+                }
             }
-            current[endPosition[1] - position[1]] = '\0';
+            current[strlen(current)] = '\0';
             chosen->insert(current);
             delete[] current;
             temp = temp->next;
+            symbolCount = 0;
         }
         return chosen;
     }
@@ -298,12 +300,10 @@ public:
                 cin.ignore();
                 tempPath = TYPICAL_PATH + tempPath;
                 ifstream file(tempPath);
-                cout << "Checkpoint opening file\n";
                 if (!file.is_open()) {
                     cout << "File not found\n";
                 }
                 else {
-                    cout << "Checkpoint finding file\n";
                     path = tempPath;
                     file.close();
                     break;
@@ -345,41 +345,35 @@ public:
 
     EncryptConnector(){
         // Load the dynamic library
-        cout << "Checkpoint start loading\n";
-        handle = dlopen("/Users/tim_bzz/Documents/projects/Clion/Paradigms/Assignment4/caesar.so", RTLD_LAZY);
+        handle = dlopen("/Users/tim_bzz/Documents/projects/Clion/Paradigms/Assignment4/libcaesar.so", RTLD_LAZY);
         if (!handle) {
             fprintf(stderr, "Error loading library: %s\n", dlerror());
             throw runtime_error("Error loading library: " + string(dlerror()) + "\n");
         }
-        cout << "Checkpoint 1 func\n";
         // Load the encrypt function from the library
         *(void**)(&encrypt) = dlsym(handle, "encrypt");
         char* error = dlerror();
         if (error != NULL) {
             throw runtime_error("Error loading 'encrypt' function: " + string(error) + "\n");
         }
-        cout << "checkpoint 2 func\n";
         // Load the decrypt function from the library
         *(void**)(&decrypt) = dlsym(handle, "decrypt");
         error = dlerror();
         if (error != NULL) {
             throw runtime_error("Error loading 'encrypt' function: " + string(error) + "\n");
         }
-        cout << "checkpoint 3 func\n";
         // Load the key function from the library
         *(void**)(&keyChecker) = dlsym(handle, "keyChecker");
         error = dlerror();
         if (error != NULL) {
             throw runtime_error("Error loading 'encrypt' function: " + string(error) + "\n");
         }
-        cout << "checkpoint 4 func\n";
         // Load the filer function from the library
         *(void**)(&filer) = dlsym(handle, "filer");
         error = dlerror();
         if (error != NULL) {
             throw runtime_error("Error loading 'encrypt' function: " + string(error) + "\n");
         }
-        cout << "Encryption functions loaded\n";
     }
 
     void KeyCheck(){
@@ -499,16 +493,16 @@ public:
 class UI{
 public:
     UI(){
-        cout << "Welcome to the text encryptor\n";
-        cout << "Loading...\n";
+        cout << "Loading.";
         textEditor head;
-        cout << "Head went good\n";
+        cout << ".";
         EncryptConnector encryptor;
-        cout << "Encryptor went good\n";
+        cout << ".";
         unique_ptr<textEditor> tempNode;
-        cout<< "Unique went good\n";
+        cout << "+!\n";
+        cout << "Welcome to the text encryptor\n";
 
-        head.textEditorPreset("textStar.txt");
+        head.textEditorPreset("/Users/tim_bzz/Documents/projects/Clion/Paradigms/Assignment4/textStart.txt");
         cout << "The path is set, The new text was uploaded\n";
         bool isRunning = true;
         printMenu();
@@ -517,10 +511,12 @@ public:
             switch (answer) {
 
                 case 'p':
+                    CleanConsole();
                     head.print();
                     break;
 
                 case '1':
+                    CleanConsole();
                     head.PathChecker();
                     head.textEditorPreset(head.path);
                     cout << "The path is set, The new text was uploaded\n";
@@ -528,41 +524,51 @@ public:
                     break;
 
                 case 'k':
+                    CleanConsole();
                     encryptor.SetKey();
                     break;
 
                 case 'e':
+                    CleanConsole();
                     encryptor.EncryptString(&head);
                     break;
 
                 case 'i':
+                    CleanConsole();
                     tempNode = head.HighLight();
                     encryptor.UniversalEnDecryptor(tempNode.get()->head.next, 0);
                     break;
 
                 case '[':
+                    CleanConsole();
                     encryptor.UniversalEnDecryptor(head.head.next, 0);
                     break;
 
                 case '9':
+                    CleanConsole();
                     encryptor.filer(0);
                     break;
 
                 case '0':
+                    CleanConsole();
                     encryptor.filer(1);
                     break;
 
 
                 case 'l':
+                    CleanConsole();
                     encryptor.DecryptString(&head);
                     break;
 
                 case 'o':
+                    CleanConsole();
                     tempNode = head.HighLight();
                     encryptor.UniversalEnDecryptor(tempNode.get()->head.next, 1);
                     break;
 
                 case ']':
+                    CleanConsole();
+
                     encryptor.UniversalEnDecryptor(head.head.next, 1);
                     break;
 
@@ -582,6 +588,7 @@ public:
                     break;
 
                 case 'd':
+                    CleanConsole();
                     head.coursor.pointHorizontalMove(1, (int[]){-1, -1});
                     break;
 
@@ -607,7 +614,6 @@ public:
     void static printMenu(){
         cout << "Please, choose the option:\n"
             << "1 - change the origin's path\n"
-            << "2 - change the destination's path\n"
             << "p - print the text\n"
             << "k - set the key \n"
 
@@ -640,10 +646,6 @@ public:
 
     void static printInvalidCommand(){
         cout << "Invalid command. Choose 'h' to see all commands\n";
-    }
-
-    void static printProcessFinished(){
-        cout << "Process finished.\n";
     }
 
 
