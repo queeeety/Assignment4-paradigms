@@ -161,19 +161,77 @@ public:
     }
 };
 
+class FileProccess{
+public:
+    string path = "";
+    textNode text;
+
+    FileProccess() : text("") {}
+
+    void PathChecker() {
+        string tempPath;
+        do {
+            cout << "Please, enter the path to the file: \n";
+            cin >> tempPath;
+            cin.ignore();
+            tempPath = TYPICAL_PATH + tempPath;
+            ifstream file(tempPath);
+            if (!file.is_open()) {
+                cout << "File not found\n";
+            }
+            else {
+                path = tempPath;
+                file.close();
+                break;
+            }
+        } while (true);
+    }
+
+    void insert(const char *input) {
+        textNode *new_node = new textNode(input);
+
+        if (text.next == nullptr) {
+            text.next = new_node;
+        } else {
+            textNode *temp = text.next;
+            while (temp->next != nullptr) {
+                temp = temp->next;
+            }
+            temp->next = new_node;
+        }
+    }
+
+    textNode readFile(){
+            char str[MAX_STRING_SIZE];
+            CheckPoint:
+            ifstream file(path);
+            if (!file.is_open()) {
+                cout << "The start file was not found\n";
+                PathChecker();
+                goto CheckPoint;
+            }
+            while (file.getline(str, MAX_STRING_SIZE)) {
+                this->insert(str);
+            }
+            file.close();
+            return text;
+    }
+};
 
 class textEditor {
+
 public:
     textNode head;
     string path = "";
     Coursor coursor;
-
+    FileProccess fileOperations;
 
     textEditor() : head("") {
     }
 
     void textEditorPreset(string path) {
         this->path = path;
+        fileOperations.path = path;
         this->clean();
         this->read();
         int lines = this->CountLines();
@@ -190,6 +248,7 @@ public:
         } while (temp != nullptr);
         return lineCounter;
     }
+
     void clean(){
         textNode *temp = head.next;
         while (temp != nullptr) {
@@ -200,20 +259,9 @@ public:
         }
         head.next = nullptr;
     }
+
     void read() {
-        char str[MAX_STRING_SIZE];
-        bool ispath = false;
-        CheckPoint:
-        ifstream file(path);
-        if (!file.is_open()) {
-            cout << "The start file was not found\n";
-            PathChecker();
-            goto CheckPoint;
-        }
-        while (file.getline(str, MAX_STRING_SIZE)) {
-            this->insert(str);
-        }
-        file.close();
+        head = fileOperations.readFile();
         coursor.Update(CountLines(), &head);
     }
 
@@ -238,7 +286,6 @@ public:
             temp = temp->next;
         }
     }
-
 
     unique_ptr<textEditor> HighLight() {
         char input = 'w';
@@ -309,7 +356,6 @@ public:
                     break;
                 }
             } while (true);
-
     }
 
     char* GetLine(){
