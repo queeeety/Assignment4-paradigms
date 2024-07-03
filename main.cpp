@@ -14,6 +14,7 @@ class textEditor;
 class textNode;
 class Coursor;
 class EncryptConnector;
+class FileProccess;
 
 class textNode {
 public:
@@ -216,13 +217,34 @@ public:
             file.close();
             return text;
     }
+
+    void SaveStringIntoFile(const char* message = "", textNode* startNode = nullptr){
+        string localPath;
+        cout << "Please, enter the path to the file: \n";
+        cin >> localPath;
+        localPath = TYPICAL_PATH + localPath; // Ensure the path is prefixed with the typical path if needed
+        ofstream file(localPath); // Use localPath to open the file
+        if (!file.is_open()) {
+            cout << "Error opening file at " << localPath << endl;
+            return;
+        }
+        if (message != string("")){
+            file << message;
+        }
+        else if (startNode != nullptr){
+            for (textNode* temp = startNode; temp != nullptr; temp = temp->next) {
+                file << temp->data << endl;
+            }
+        }
+        file.close();
+        cout << "The message is saved to " << localPath << endl;
+    }
 };
 
 class textEditor {
 
 public:
     textNode head;
-    string path = "";
     Coursor coursor;
     FileProccess fileOperations;
 
@@ -230,10 +252,10 @@ public:
     }
 
     void textEditorPreset(string path) {
-        this->path = path;
-        fileOperations.path = path;
         this->clean();
-        this->read();
+        fileOperations.path = path;
+        head = fileOperations.readFile();
+        coursor.Update(CountLines(), &head);
         int lines = this->CountLines();
         coursor.Update(lines, &head);
     }
@@ -261,6 +283,7 @@ public:
     }
 
     void read() {
+        fileOperations.PathChecker();
         head = fileOperations.readFile();
         coursor.Update(CountLines(), &head);
     }
@@ -339,24 +362,6 @@ public:
         return chosen;
     }
 
-    void PathChecker() {
-        string tempPath;
-            do {
-                cout << "Please, enter the path to the file: \n";
-                cin >> tempPath;
-                cin.ignore();
-                tempPath = TYPICAL_PATH + tempPath;
-                ifstream file(tempPath);
-                if (!file.is_open()) {
-                    cout << "File not found\n";
-                }
-                else {
-                    path = tempPath;
-                    file.close();
-                    break;
-                }
-            } while (true);
-    }
 
     char* GetLine(){
         textNode* temp = &head;
@@ -387,7 +392,7 @@ public:
     int (*keyChecker)();
     void (*filer)(int);
     int key = -1;
-
+    FileProccess fileOp;
 
     EncryptConnector(){
         // Load the dynamic library
@@ -454,7 +459,7 @@ public:
         cin >> answer;
         cin.ignore();
         if (answer == 'y') {
-            SaveStringIntoFile(encryptedMessage);
+            fileOp.SaveStringIntoFile(encryptedMessage);
         }
         else{
             cout << "The encrypted message is not saved. You can copy it:\n" << encryptedMessage << endl;
@@ -476,7 +481,7 @@ public:
         cin >> answer;
         cin.ignore();
         if (answer == 'y') {
-            SaveStringIntoFile(decryptedMessage);
+            fileOp.SaveStringIntoFile(decryptedMessage);
         }
         else{
             cout << "The decrypted message is not saved. You can copy it:\n" << decryptedMessage << endl;
@@ -507,7 +512,7 @@ public:
         cin >> answer;
         cin.ignore();
         if (answer == 'y') {
-            SaveStringIntoFile("", decrypted.head.next);
+            fileOp.SaveStringIntoFile("", decrypted.head.next);
         }
         else{
             cout << "The text is not saved. You can copy it, though:\n";
@@ -517,21 +522,6 @@ public:
 
     ~EncryptConnector(){
         dlclose(handle);
-    }
-
-    void SaveStringIntoFile(const char* message = "", textNode* startNode = nullptr){
-        string path = this->PathChecker();
-        ofstream file(path);
-        if (message != string("")){
-            file << message;
-        }
-        else if (startNode != nullptr){
-            for (textNode* temp = startNode; temp != nullptr; temp = temp->next) {
-                file << temp->data << endl;
-            }
-        }
-        file.close();
-        cout<< "The message is saved\n";
     }
 };
 
@@ -563,8 +553,7 @@ public:
 
                 case '1':
                     CleanConsole();
-                    head.PathChecker();
-                    head.textEditorPreset(head.path);
+                    head.read();
                     cout << "The path is set, The new text was uploaded\n";
                     head.print();
                     break;
